@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Snake</title>
+        <style>
+	 body {
+	     background: black;
+	     margin: auto;
+	     display: flex;
+	     flex-direction: column;
+	     justify-content: center;
+	     align-items: center;
+	     color: white;
+	     width: 600px;
+	 }
+	 canvas {
+	     background: darkgrey;
+	 }
+
+	 h1, h2 {
+	     margin-bottom: 0;
+	 }
+
+	 @keyframes heartbeat
+	 {
+	     0%
+	     {
+		 transform: scale( .75 );
+	     }
+	     20%
+	     {
+		 transform: scale( 1 );
+	     }
+	     40%
+	     {
+		 transform: scale( .75 );
+	     }
+	     60%
+	     {
+		 transform: scale( 1 );
+	     }
+	     80%
+	     {
+		 transform: scale( .75 );
+	     }
+	     100%
+	     {
+		 transform: scale( .75 );
+	     }
+	 }
+
+	 .winning {
+	     color: green;
+	     animation: heartbeat 1s infinite;
+	 }
+	</style>
+    </head>
+    <body>
+	<h1> Your Max Score: <span id="score">1</span> </h1>
+	<h2 id="currenth2"> Current Score: <span id="current">1</span> </h2>
+	<br>
+        <canvas id="snake-canvas" height="600px" width="600px"></canvas>
+	<script>
+
+	 // boilerplate to get canvas node and context
+	 // only needs to be done once
+         const canvas = document.getElementById("snake-canvas")
+	 const ctx = canvas.getContext('2d')
+
+         const canvasWidth = canvas.width
+	 const canvasHeight = canvas.height
+	 let maxScore = 1;
+
+	 // to have a universal size for snake jumps, size, and food
+	 const size = 20
+
+         // to keep track of snake direction
+	 let direction
+
+	 // to initialize snake position to center of canvas
+	 let x = canvasWidth/2
+	 let y = canvasHeight/2
+
+	 let snakeBody = [{"x":x, "y":y}]
+
+	 let food = {}
+
+	 // to listen to arrow key events for the snake's direction update
+	 document.onkeydown = function({keyCode}) {
+	     // Direction logic:
+	     // Allow any direction change when the snake is only one square long
+	     // In all other cases check that the direction change is not opposite to the current one
+	     // i.e. user wants to go right from current left -> this is an illegal move
+	     if(keyCode == 37 && (direction != "right" || snakeBody.length == 1)) direction = "left"
+	     else if(keyCode == 39 && (direction != "left" || snakeBody.length == 1)) direction ="right"
+	     else if(keyCode == 38 && (direction != "down" || snakeBody.length == 1)) direction = "up"
+	     else if(keyCode == 40 && (direction != "up" || snakeBody.length == 1)) direction = "down"
+         }
+
+         let updateHeadPosition = function () {
+	     switch(direction) {
+		     // using the % operator to "teleport" the snake
+		     // i.e. 620 % 600 = 20 -> so the snake doesn't overflow
+		 case "right": x = (x + size) % canvasWidth
+		     break
+		     // when subtracting we add back canvasWidth to avoid negative numbers
+		 case "left": x = (x - size + canvasWidth) % canvasWidth
+		     break
+		 case "up": y = (y - size + canvasHeight) % canvasHeight
+		     break
+		 case "down": y = (y + size) % canvasHeight
+		     break
+	     }
+	 }
+
+	 const availableXPoints = canvasHeight / size
+	 const availableYPoints = canvasWidth / size
+
+	 let isInSnakeBody = function (snakeBody, {x, y}) {
+	     if (snakeBody.length > 1)
+		 for(let i = 0; i < snakeBody.length; i++) {
+		     if(x == snakeBody[i].x && y == snakeBody[i].y) return true
+		 }
+	 }
+
+         let placeFood = function () {
+	     // random numbers on X and Y axis from 0
+	     let randomPoint = ((max) => (Math.floor(Math.random() * max)) * size)
+
+	     if(!food.x && !food.y) {
+
+		 maybeFoodX = randomPoint(availableXPoints)
+		 maybeFoodY = randomPoint(availableYPoints)
+
+                 while(isInSnakeBody(snakeBody, {"x": maybeFoodX, "y": maybeFoodY})) {
+		     maybeFoodX = randomPoint(availableXPoints)
+		     maybeFoodY = randomPoint(availableYPoints)
+		 }
+
+		 food.x = maybeFoodX
+		 food.y = maybeFoodY
+	     }
+	 }
+
+         let updateSnakePosition = function () {
+	     // to add head to snake
+	     snakeNewHead = {"x":x, "y":y}
+	     snakeBody[snakeBody.length] = snakeNewHead
+
+	     let currenth2Node = document.getElementById("currenth2")
+	     let currentNode = document.getElementById("current")
+
+	     // to check if snake can eat food
+	     if(isInSnakeBody(snakeBody, food)) {
+                 food = {}
+		 currentNode.innerText = snakeBody.length;
+                 if(snakeBody.length > maxScore) {
+		     currenth2Node.classList.add("winning")
+		 }
+	     }
+
+	     // check for death -> removing snakeNewHead from snakeBody
+	     else if (isInSnakeBody(snakeBody.slice(0, -1), snakeNewHead)) {
+                 maxScore = snakeBody.length - 1
+		 document.getElementById("score").innerText = maxScore
+		 // reset to start
+		 x = canvasWidth/2
+		 y = canvasHeight/2
+                 snakeBody = [{"x":x, "y":y}]
+		 direction = null
+
+		 currentNode.innerText = 1
+		 currenth2Node.classList.remove("winning")
+
+                 alert("You have been hacked!!&^$(*&£())")
+	     }
+	     else  {
+		 // to "forget" snake's last body piece
+		 snakeBody.shift()
+	     }
+	 }
+
+	 var imgHead = new Image();
+         imgHead.src = "https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/68113/snake-face-clipart-xl.png"
+
+	 var imgFood = new Image();
+         imgFood.src = "https://www.freeprintablepdf.eu/files/en-apple-red-leaf.png"
+
+         function game () {
+	     updateHeadPosition()
+	     placeFood()
+	     updateSnakePosition()
+             ctx.clearRect(0,0,canvas.width,canvas.height)
+
+	     // just some canvas drawing
+	     ctx.beginPath()
+	     ctx.fillStyle = "white"
+	     ctx.drawImage(imgFood, food.x, food.y, size, size)
+
+	     ctx.fillStyle = "red"
+	     for(let i = 0; i < snakeBody.length; i++) {
+		 ctx.drawImage(imgHead,snakeBody[i].x, snakeBody[i].y, size, size)
+
+	     }
+	     ctx.fill()
+	 }
+	 setInterval(game, 80)
+        </script>
+    </body>
+</html>
