@@ -62,12 +62,19 @@
 	<h1> Your Max Score: <span id="score">1</span> </h1>
 	<h2 id="currenth2"> Current Score: <span id="current">1</span> </h2>
 	<br>
-        <canvas id="snake-canvas" height="600px" width="600px"></canvas>
+        <canvas id="snake-canvas"></canvas>
 	<script>
+
+         const queryString = window.location.search
+	 const urlParams = new URLSearchParams(queryString)
 
 	 // boilerplate to get canvas node and context
 	 // only needs to be done once
          const canvas = document.getElementById("snake-canvas")
+
+	 canvas.width = parseFloat(urlParams.get('grid')) || 600
+	 canvas.height = parseFloat(urlParams.get('grid')) || 600
+
 	 const ctx = canvas.getContext('2d')
 
          const canvasWidth = canvas.width
@@ -75,12 +82,14 @@
 	 let maxScore = 1;
 
 	 // to have a universal size for snake jumps, size, and food
-	 const size = 20
+         const size = parseFloat(urlParams.get('size')) || 30
 
          // to keep track of snake direction
 	 let direction
+	 let directionTemp
 
-	 // to initialize snake position to center of canvas
+
+         // to initialize snake position to center of canvas
 	 let x = canvasWidth/2
 	 let y = canvasHeight/2
 
@@ -88,30 +97,35 @@
 
 	 let food = {}
 
-	 // to listen to arrow key events for the snake's direction update
+	 let gameInterval = parseFloat(urlParams.get('speed')) || 80
+
+         // to listen to arrow key events for the snake's direction update
 	 document.onkeydown = function({keyCode}) {
+
 	     // Direction logic:
 	     // Allow any direction change when the snake is only one square long
 	     // In all other cases check that the direction change is not opposite to the current one
 	     // i.e. user wants to go right from current left -> this is an illegal move
-	     if(keyCode == 37 && (direction != "right" || snakeBody.length == 1)) direction = "left"
-	     else if(keyCode == 39 && (direction != "left" || snakeBody.length == 1)) direction ="right"
-	     else if(keyCode == 38 && (direction != "down" || snakeBody.length == 1)) direction = "up"
-	     else if(keyCode == 40 && (direction != "up" || snakeBody.length == 1)) direction = "down"
+	     if(keyCode == 37 && (direction != 39 || snakeBody.length == 1)) directionTemp = 37
+	     else if(keyCode == 39 && (direction != 37 || snakeBody.length == 1)) directionTemp = 39
+	     else if(keyCode == 38 && (direction != 40 || snakeBody.length == 1)) directionTemp = 38
+	     else if(keyCode == 40 && (direction != 38 || snakeBody.length == 1)) directionTemp = 40
          }
 
          let updateHeadPosition = function () {
-	     switch(direction) {
+	     direction = directionTemp
+
+             switch(direction) {
 		     // using the % operator to "teleport" the snake
 		     // i.e. 620 % 600 = 20 -> so the snake doesn't overflow
-		 case "right": x = (x + size) % canvasWidth
+		 case 39: x = (x + size) % canvasWidth
 		     break
 		     // when subtracting we add back canvasWidth to avoid negative numbers
-		 case "left": x = (x - size + canvasWidth) % canvasWidth
+		 case 37: x = (x - size + canvasWidth) % canvasWidth
 		     break
-		 case "up": y = (y - size + canvasHeight) % canvasHeight
+		 case 38: y = (y - size + canvasHeight) % canvasHeight
 		     break
-		 case "down": y = (y + size) % canvasHeight
+		 case 40: y = (y + size) % canvasHeight
 		     break
 	     }
 	 }
@@ -207,7 +221,7 @@
 	     }
 	     ctx.fill()
 	 }
-	 setInterval(game, 80)
+	 setInterval(game, gameInterval)
         </script>
     </body>
 </html>
